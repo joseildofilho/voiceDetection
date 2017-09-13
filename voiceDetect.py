@@ -1,10 +1,13 @@
-import net
+import net as rede
 import data
 
+#print(data.countTimeFold("/home/joseildo/SpeechDetection/musan/speech/librivox/"),"segundos")
 
-data.loadAudio('/home/joseildo/SpeechDetection/musan/speech/librivox/speech-librivox-0172.wav')
+
 data.loadFromFold('/home/joseildo/SpeechDetection/musan/speech/librivox/')
+data.notSilence = "2"
+data.loadFromFold("/home/joseildo/SpeechDetection/musan/noise/sound-bible")
 
-while(data.hasNext()):
-	x, y = data.next()
-	rede.modelo.fit(x,y,nb_epoch=10)
+data.prepareData(x,y,shuffle=True)
+
+rede.model.save_weights('/home/joseildo/SpeechDetection/pyHumanDetect/pesosPorraa.h5')

@@ -33,6 +33,9 @@ def loadAudio(audio):
 	sound = AS.from_file(audio)
 	if not sound.frame_rate == frameRate:
 		sound = sound.set_frame_rate(frameRate)
+"""
+    * simulate a iterate pattern use next and hasNext to get the data
+"""
 def iterateOnFold(fold,shuffle = False):
 	global lista
 	nb = 0
@@ -41,6 +44,9 @@ def iterateOnFold(fold,shuffle = False):
 	path = fold
 	if shuffle:
 		shuf(lista)
+"""
+    * this method will be re-write because it's no generic, it was written to solve specific problem
+"""
 def next():
 	global nb
 	global notSilence
@@ -85,6 +91,9 @@ def loadFromFold(fold,onDisk = False):
 	if onDisk:
 		global dataFrame
 		dataFrame = pd.read_csv("/home/joseildo/SpeechDetection/pyHumanDetect/data.csv",chunksize=100000)
+"""
+    * calculate the seconds of a fold
+"""
 def countTimeFold(fold):
 	totalTime = 0
 	loadFromFold(fold)
@@ -99,8 +108,14 @@ def generateData():
 		dataList.append(sound[i:i+tempo].get_array_of_samples())
 def prepareData():
 	return np.asarray([dataList]),np.asarray([np_utils.to_categorical(labelsList,4)])
+"""
+    * calculate the intervals of silence in a audio using threashold, it's based on DB's.
+"""
 def silenceInterval():
 	return dub.detect_nonsilent(sound, silence_thresh = db)
+"""
+    * update the labels based on, what is silence and isn't
+"""
 def generateLabels(silenceGaps):
 	j = 0
 	n = False
@@ -113,6 +128,7 @@ def generateLabels(silenceGaps):
                         if(n) and (j+1 < len(silenceGaps)):
                                 n = False
                                 j += 1
+
 def inside(interval,i):
 	return ((interval[0] < i) and (interval[1] > i))
 def clear():

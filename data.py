@@ -22,7 +22,8 @@ path = ""
 sound = None
 dataList = []
 labelsList = []
-
+dataNp = []
+labelsNp = []
 
 """
 	* this function will change the frame rate to the default 
@@ -48,28 +49,31 @@ def iterateOnFold(fold,shuffle = False):
     * this method will be re-write because it's no generic, it was written to solve specific problem
 """
 def next():
-	global nb
-	global notSilence
-	name = lista[nb]
-	nb += 1
-	dataList = []
-	labelsList = []
-	if "speech" in name:
-		notSilence = "1"
-	elif "music" in name:
-		notSilence = "2"
-	else:
-		notSilence = "3"
-	loadAudio(path+name)
-	generateData()
-	p.progress(nb,len(lista),"loading and running fold\n")
-	return prepareData()
+    global nb
+    global notSilence
+    global dataList
+    global labelsList
+    name = lista[nb]
+    nb += 1
+    dataList = []
+    labelsList = []
+    if "speech" in name:
+        notSilence = "1"
+    elif "music" in name:
+        notSilence = "2"
+    else:
+        notSilence = "3"
+    loadAudio(path+name)
+    generateData()
+    p.progress(nb,len(lista),"loading and running fold\n")
+    return prepareData()
 def hasNext():
 	return nb < len(lista)
 """
 	Forces de program to create a file csv with the data and resturn a iterable dataframe
 	Not implemented:
 	* must to fix ehere de dataframe would be or if it going to be returned
+        @Deprecated
 """
 def loadFromFold(fold,onDisk = False):
 	global nb
@@ -77,7 +81,7 @@ def loadFromFold(fold,onDisk = False):
 	global lista
 	lista = []
 	os.chdir(fold)
-	listDir = os.listdir()
+	sumlistDir = os.listdir()
 	for i in listDir:
 		if i.endswith('.wav'):
 			loadAudio(i)
@@ -91,6 +95,18 @@ def loadFromFold(fold,onDisk = False):
 	if onDisk:
 		global dataFrame
 		dataFrame = pd.read_csv("/home/joseildo/SpeechDetection/pyHumanDetect/data.csv",chunksize=100000)
+def loadAllFold(fold):
+    iterateOnFold(fold,shuffle=True)
+    global dataNp
+    global labelsNp
+    if len(dataNp) == 0:
+        dataNp, labelsNp = next()
+    while(hasNext()):
+        x,y = next()
+        dataNp = np.concatenate((x,dataNp),axis=1)
+        labelsNp = np.concatenate((y,labelsNp),axis=1)
+    print("acabou")
+
 """
     * calculate the seconds of a fold
 """
@@ -133,6 +149,3 @@ def inside(interval,i):
 	return ((interval[0] < i) and (interval[1] > i))
 def clear():
 	lista = []
-	dataList = []
-	labelsList = []
-

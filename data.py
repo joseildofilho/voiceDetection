@@ -45,6 +45,8 @@ def iterateOnFold(fold,shuffle = False):
 	path = fold
 	if shuffle:
 		shuf(lista)
+	else:
+		lista.sort()
 """
     * this method will be re-write because it's no generic, it was written to solve specific problem
 """
@@ -65,7 +67,7 @@ def next():
         notSilence = "3"
     loadAudio(path+name)
     generateData()
-    p.progress(nb,len(lista),"loading and running fold\n")
+    p.progress(nb,len(lista),"loading and running fold")
     return prepareData()
 def hasNext():
 	return nb < len(lista)

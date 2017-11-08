@@ -16,9 +16,23 @@ class Data:
 
         self.__audio = None
 
-        self.__chunks = []
+        self.__silenceChunks = []
+        self.__soundChunks = []
 
-        self.__bufferChunks = AudioSegment.empty()
+        self.__silenceBufferChunks = AudioSegment.empty()
+        self.__soundBufferChunks = AudioSegment.empty()
+    @property
+    def folder(self):
+        return self.__folder
+    @folder.setter
+    def folder(self,folder):
+        self.__folder = folder
+    @property
+    def silence(self):
+        return self.__silenceBufferChunks
+    @property
+    def sound(self):
+        return self.__soundBufferChunks
     def __iter__(self):
         return self
     def __next__(self):
@@ -29,22 +43,38 @@ class Data:
     def __exit__(self, exc_type, exc_val, exc_tb):
         #should clear all
         print("do nothing")
+    def splitSound(self):
+        self.__soundChunks = []
+        gaps = silence.detect_nonsilent(self.__audio)
+        for start, final in gaps:
+            self.__soundChunks.append(self.__audio[start:final])
+        return self
     def splitSilence(self):
-        self.__chunks = []
+        self.__silenceChunks = []
         gaps = silence.detect_silence(self.__audio)
         for start, final in gaps:
-            self.__chunks.append(self.__audio[start:final])
-            #print(self.__audio[start:final].duration_seconds)
-        return self.__chunks
+            self.__silenceChunks.append(self.__audio[start:final])
+        return self
+    def storeSounds(self, src = "", name = ""):
+        if name == "":
+            self.__folder.writeChunks(self.__soundBufferChunks,src)
+        else:
+            self.__folder.writeChunks(self.__soundBufferChunks,src,name)
+        self.__soundBufferChunks = AudioSegment.empty()
+        return self
+
     def storeSilences(self,src = "",name = ""):
         if name == "":
-            self.__folder.writeChunks(self.__bufferChunks,src)
+            self.__folder.writeChunks(self.__silenceBufferChunks,src = src)
         else:
-            self.__folder.writeChunks(self.__bufferChunks,src,name)
-        self.__bufferChunks = AudioSegment.empty()
+            self.__folder.writeChunks(self.__silenceBufferChunks,src = src,name = name)
+        self.__silenceBufferChunks = AudioSegment.empty()
         return self
     def appendSilences(self):
-        for data in self.__chunks:
-            self.__bufferChunks += data
-        print(self.__bufferChunks.duration_seconds)
+        for data in self.__silenceChunks:
+            self.__silenceBufferChunks += data
+        return self
+    def appendSounds(self):
+        for data in self.__soundChunks:
+            self.__soundBufferChunks += data
         return self

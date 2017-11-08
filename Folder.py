@@ -1,12 +1,13 @@
 import os
 from pydub import AudioSegment
 import random
-
+import re
 
 """
     TO-DO:
         * search for descent loading bar
         * sklearn cross validation
+        * make a full suport for regex
 """
 
 
@@ -22,18 +23,21 @@ class Folder:
     
     """
 
-    def __init__(self, src="", shuffle=False, putBack=False, folderSlice = 1.0):
+    def __init__(self, src="", shuffle=False, putBack=False, folderSlice = 1.0, regex = ""):
         
         self.__src = src if src.endswith("/") else (src + "/")
 
         os.chdir(src)
 
-        self.__outputSrc = self.__src + "output"
+        self.__outputSrc = self.__src + "output/"
 
         if not os.path.exists(self.__outputSrc):
             os.makedirs(self.__outputSrc)       
                
         self.__folderSrcList = os.listdir()
+        for i in self.__folderSrcList:
+            if not ".wav" in i:
+                self.__folderSrcList.remove(i)
         if shuffle:
             random.shuffle(self.__folderSrcList) 
 
@@ -53,7 +57,9 @@ class Folder:
         self.sizeSlice = int(self.size * self.__slice)
         self.__auxSliceLowerList = list(self.__folderSrcList[0:self.sizeSlice])
         self.__auxSliceUpperList = list(self.__folderSrcList[self.sizeSlice+1:self.size])
-    
+        
+        self.__regexFunction = re.compile(regex)
+        self.__regexExpression = regex
     @property
     def output(self):
         return self.__outputSrc
@@ -63,7 +69,20 @@ class Folder:
         if not os.path.exists(self.__outputSrc):
             os.makedirs(self.__outputSrc)
         return self
-
+    @property
+    def regex(self):
+        return self.__regexExpression
+    @regex.setter
+    def regex(self,reg):
+        self.__regexFunction = re.compile(reg)
+        self.__regexExpression = reg
+        for i in range(len(self.__folderSrcList)-1,0,-1):
+            if not bool(self.__regexFunction.match(self.__folderSrcList[i])):
+                del self.__folderSrcList[i]
+        return self
+    @property
+    def srcList(self):
+        return self.__folderSrcList
     """
         Loads one audio
     """
@@ -71,7 +90,7 @@ class Folder:
         try:
             return AudioSegment.from_file(audio)
         except ValueError:
-            print("Not found or invalid Audio")
+            print("Not found or invalid Audio") # must to raise a error
 
 
     """
@@ -87,7 +106,14 @@ class Folder:
                 audiosList.append(loadAudio(i))
         return audiosList
 	
-    
+    def loadByRegexToMemory(self,regex = ""):
+        if not regex == self.__regexExpression:
+            self.__regexExpression = regex
+            self.__regexFunction = re.compile(regex)
+        for i in self.__folderSrcList:
+            if self.__regexFunction.match(i):
+                audiosList.append(loadAudio(i))
+        return audiosList
     """
     	Loads part of the src files with indexes lower than sizeSlice.
     """
@@ -142,7 +168,6 @@ class Folder:
         if self.i < self.size:
             self.i += 1
             name = self.__folderSrcList[self.i - 1]
-            print(name)
             if self.__putBack:
                 name = choice(self.__folderSrcList)
             return self.loadAudio(name)
@@ -161,5 +186,5 @@ class Folder:
         return classList
 
     def writeChunks(self,data,src = "",name = "output.wav"):
-        print(data.duration_seconds)
-        data.export((self.__outputSrc + name) if src == "" else (src + name), format="wav", bitrate="16k")
+        print(((self.__outputSrc + name) if src == "" else (src + name)))
+        data.export(((self.__outputSrc + name) if src == "" else (src + name)), format="wav", bitrate="16k")

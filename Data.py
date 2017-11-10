@@ -10,9 +10,10 @@ class Data:
     """
         folder, it's the object Folder that you want to use
     """
-    def __init__(self,folder):
+    def __init__(self,folder,thresh = -16):
         self.__folder = folder
         self.__iterFolder = iter(self.__folder)
+        self.__threshold = thresh
 
         self.__audio = None
 
@@ -34,9 +35,11 @@ class Data:
     def sound(self):
         return self.__soundBufferChunks
     def __iter__(self):
+        self.__iterFolder = iter(self.__folder)
         return self
     def __next__(self):
         self.__audio = next(self.__iterFolder)
+        print(self.__audio.duration_seconds)
         return self
     def __enter__(self):
         return self
@@ -45,17 +48,18 @@ class Data:
         print("do nothing")
     def splitSound(self):
         self.__soundChunks = []
-        gaps = silence.detect_nonsilent(self.__audio)
+        gaps = silence.detect_nonsilent(self.__audio,silence_thresh = self.__threshold)
         for start, final in gaps:
             self.__soundChunks.append(self.__audio[start:final])
         return self
     def splitSilence(self):
         self.__silenceChunks = []
-        gaps = silence.detect_silence(self.__audio)
+        gaps = silence.detect_silence(self.__audio,silence_thresh = self.__threshold)
         for start, final in gaps:
             self.__silenceChunks.append(self.__audio[start:final])
         return self
     def storeSounds(self, src = "", name = ""):
+        print(self.__soundBufferChunks.duration_seconds)
         if name == "":
             self.__folder.writeChunks(self.__soundBufferChunks,src)
         else:

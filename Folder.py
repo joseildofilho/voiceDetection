@@ -76,9 +76,12 @@ class Folder:
     def regex(self,reg):
         self.__regexFunction = re.compile(reg)
         self.__regexExpression = reg
-        for i in range(len(self.__folderSrcList)-1,0,-1):
+        self.__folderSrcList = os.listdir()
+        for i in range(len(self.__folderSrcList)-1,-1,-1):
             if not bool(self.__regexFunction.match(self.__folderSrcList[i])):
                 del self.__folderSrcList[i]
+        self.__size = len(self.__folderSrcList)
+        print(self.__folderSrcList)
         return self
     @property
     def srcList(self):
@@ -161,15 +164,16 @@ class Folder:
         	* implement slice here
     """
     def __iter__(self):
-
+        self.i = 0
+        self.__size = len(self.__folderSrcList)
         return self
 
     def __next__(self):
-        if self.i < self.size:
-            self.i += 1
-            name = self.__folderSrcList[self.i - 1]
+        if self.i < self.__size:
+            name = self.__folderSrcList[self.i]
             if self.__putBack:
                 name = choice(self.__folderSrcList)
+            self.i += 1
             return self.loadAudio(name)
         else:
             raise StopIteration()
@@ -186,5 +190,4 @@ class Folder:
         return classList
 
     def writeChunks(self,data,src = "",name = "output.wav"):
-        print(((self.__outputSrc + name) if src == "" else (src + name)))
         data.export(((self.__outputSrc + name) if src == "" else (src + name)), format="wav", bitrate="16k")

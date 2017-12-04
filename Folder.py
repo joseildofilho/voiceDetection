@@ -1,8 +1,8 @@
+from __future__ import print_function
 import os
 from pydub import AudioSegment
 import random
 import re
-
 """
     TO-DO:
         * search for descent loading bar
@@ -23,13 +23,13 @@ class Folder:
     
     """
 
-    def __init__(self, src="", shuffle=False, putBack=False, folderSlice = 1.0, regex = ""):
+    def __init__(self, src="",output = "", shuffle=False, putBack=False, folderSlice = 1.0, regex = "",verbose = 1):
         
         self.__src = src if src.endswith("/") else (src + "/")
 
         os.chdir(src)
 
-        self.__outputSrc = self.__src + "output/"
+        self.__outputSrc = self.__src + "output/" if output == "" else output
 
         if not os.path.exists(self.__outputSrc):
             os.makedirs(self.__outputSrc)       
@@ -44,7 +44,6 @@ class Folder:
         self.__shuffle = shuffle
         self.__putBack = putBack
 
-        self.__slice = folderSlice
 
         if ((0.0 > folderSlice) and (folderSlice > 1.0)):
             raise ValueError("slice is supose to be inside of a range (0,1)")
@@ -54,12 +53,16 @@ class Folder:
         self.size = len(self.__folderSrcList)
         
         #Slice stuff
+        self.__slice = folderSlice
         self.sizeSlice = int(self.size * self.__slice)
         self.__auxSliceLowerList = list(self.__folderSrcList[0:self.sizeSlice])
         self.__auxSliceUpperList = list(self.__folderSrcList[self.sizeSlice+1:self.size])
         
+        #Regex Stuff
         self.__regexFunction = re.compile(regex)
         self.__regexExpression = regex
+
+        self.__verbose = 1
     @property
     def output(self):
         return self.__outputSrc
@@ -76,12 +79,11 @@ class Folder:
     def regex(self,reg):
         self.__regexFunction = re.compile(reg)
         self.__regexExpression = reg
-        self.__folderSrcList = os.listdir()
-        for i in range(len(self.__folderSrcList)-1,-1,-1):
-            if not bool(self.__regexFunction.match(self.__folderSrcList[i])):
-                del self.__folderSrcList[i]
-        self.__size = len(self.__folderSrcList)
-        print(self.__folderSrcList)
+        self.__folderSrcList = []
+        for i in os.listdir():
+           if bool(self.__regexFunction.match(i)) and not ("output" in i):
+                self.__folderSrcList.append(i)
+        self.size = len(self.__folderSrcList)
         return self
     @property
     def srcList(self):
@@ -103,10 +105,10 @@ class Folder:
         audiosList = []
         if self.__putBack:
             for i in self.__folderSrcList:
-                audiosList.append(loadAudio(choice(self.__folderSrcList)))
+                audiosList.append(self.loadAudio(choice(self.__folderSrcList)))
         else:
             for i in self.__folderSrcList:
-                audiosList.append(loadAudio(i))
+                audiosList.append(self.loadAudio(i))
         return audiosList
 	
     def loadByRegexToMemory(self,regex = ""):
@@ -115,7 +117,7 @@ class Folder:
             self.__regexFunction = re.compile(regex)
         for i in self.__folderSrcList:
             if self.__regexFunction.match(i):
-                audiosList.append(loadAudio(i))
+                audiosList.append(self.loadAudio(i))
         return audiosList
     """
     	Loads part of the src files with indexes lower than sizeSlice.
@@ -124,10 +126,10 @@ class Folder:
         audiosList = []
         if self.__putBack:
             for i in self.__auxSliceLowerList:
-              	audiosList.append(loadAudio(choice(self.__auxSliceLoweList)))
+              	audiosList.append(self.loadAudio(choice(self.__auxSliceLoweList)))
         else:
             for i in self.__auxSliceLowerList:
-              	audiosList.append(loadAudio(i))
+              	audiosList.append(self.loadAudio(i))
         return audiosList
      
     """
@@ -137,10 +139,10 @@ class Folder:
         audiosList = []
         if self.__putBack:
             for i in self.__auxSliceUpperList:
-                audiosList.append(loadAudio(choice(self.__auxSliceUpperList)))
+                audiosList.append(self.loadAudio(choice(self.__auxSliceUpperList)))
         else:
             for i in self.__auxSliceUpperList:
-                audiosList.append(loadAudio(i))
+                audiosList.append(self.loadAudio(i))
         return audiosList
 
       
@@ -156,7 +158,16 @@ class Folder:
     """
     def sort(self):
        	self.__folderSrcList = os.listdir()
-
+    """
+        This method tastes like in a wrong place :/
+        But for now it's what I need
+    """
+    def sliceF(self,percentage):
+        self.__slice = percentage
+        self.sizeSlice = int(self.size * self.__slice)
+        self.__auxSliceLowerList = list(self.__folderSrcList[0:self.sizeSlice])
+        self.__auxSliceUpperList = list(self.__folderSrcList[self.sizeSlice+1:self.size])
+        return self
 
     """
         By instance, the iterator it's completely sequential
@@ -174,10 +185,12 @@ class Folder:
             if self.__putBack:
                 name = choice(self.__folderSrcList)
             self.i += 1
-            return self.loadAudio(name)
+            print("\r%s/%s    %s"%(self.i,self.__size,"loading"),end = "")
+            return self.loadAudio(name), name
         else:
+            print("")
             raise StopIteration()
-
+    
     """
         Get list of files of a class.
         PS: with callback work's better

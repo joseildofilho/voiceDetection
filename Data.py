@@ -9,19 +9,23 @@ from pydub import AudioSegment
 class Data:
     """
         folder, it's the object Folder that you want to use
+
     """
-    def __init__(self,folder,thresh = -16):
+    def __init__(self,folder,thresh = -16, label = ""):
         self.__folder = folder
         self.__iterFolder = iter(self.__folder)
         self.__threshold = thresh
-
+        
         self.__audio = None
-
+        self.__audiosName = ""
+        
         self.__silenceChunks = []
         self.__soundChunks = []
-
+        
         self.__silenceBufferChunks = AudioSegment.empty()
         self.__soundBufferChunks = AudioSegment.empty()
+        self.__labels = []
+
     @property
     def folder(self):
         return self.__folder
@@ -34,12 +38,14 @@ class Data:
     @property
     def sound(self):
         return self.__soundBufferChunks
+    @property
+    def audiosName(self):
+        return self.__audiosName
     def __iter__(self):
         self.__iterFolder = iter(self.__folder)
         return self
     def __next__(self):
-        self.__audio = next(self.__iterFolder)
-        print(self.__audio.duration_seconds)
+        self.__audio, self.__audiosName = next(self.__iterFolder)
         return self
     def __enter__(self):
         return self
@@ -59,7 +65,6 @@ class Data:
             self.__silenceChunks.append(self.__audio[start:final])
         return self
     def storeSounds(self, src = "", name = ""):
-        print(self.__soundBufferChunks.duration_seconds)
         if name == "":
             self.__folder.writeChunks(self.__soundBufferChunks,src)
         else:
@@ -82,3 +87,4 @@ class Data:
         for data in self.__soundChunks:
             self.__soundBufferChunks += data
         return self
+
